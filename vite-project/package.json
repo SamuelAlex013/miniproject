@@ -10,12 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/ffmpeg": "^1.0.7",
+    "audiobuffer-to-wav": "^1.0.0",
+    "ffmpeg": "^0.0.4",
+    "opus-recorder": "^8.0.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",
-    "react-media-recorder": "^1.6.6"
+    "react-media-recorder": "^1.6.6",
+    "xhr": "^2.6.0"
   },
   "devDependencies": {
+    "@types/audiobuffer-to-wav": "^1.0.4",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
