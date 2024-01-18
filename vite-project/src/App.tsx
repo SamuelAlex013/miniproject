@@ -19,7 +19,7 @@ const App = () => {
         alert("Browser not supported");
         throw Error("");
       }
-      const recorder = new MediaRecorder(stream);
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/ogg" });
       mediaRecorder.current = recorder;
 
       mediaRecorder.current.start();
@@ -28,17 +28,18 @@ const App = () => {
       let chunks: Blob[] = [];
       mediaRecorder.current.ondataavailable = (e) => {
         chunks.push(e.data);
-        setAudioChunks([...audioChunks, ...chunks]);
       };
-      mediaRecorder.current.onstop = (e) => {
-        const blob = new Blob(chunks, { type: "audio/ogg; codecs=opus" });
+      mediaRecorder.current.onstop = async (e) => {
+        // const blob = new Blob(chunks, { type: "audio/webm; codecs=opus" });
+        // console.log(await chunks[0]);
         let reader = new FileReader();
         reader.onload = async () => {
           if (reader.result === null) return;
           if (typeof reader.result === "string") {
-            const base64String = reader.result.split(",")[1];
+            const base64String = reader.result;
             const body = { audio: base64String, language: "en-IN" };
-            console.log(body);
+            console.log(body.audio);
+            // console.log(body);
             // const text = await fetch("http://127.0.0.1:5000/voice_to_text", {
             //   method: "POST",
             //   body: JSON.stringify(body),
@@ -46,9 +47,11 @@ const App = () => {
             // console.log(text);
           }
         };
-        reader.readAsDataURL(blob);
+        reader.readAsDataURL(chunks[0]);
       };
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+    }
   };
   const stopRecording = () => {
     try {
@@ -60,9 +63,9 @@ const App = () => {
       setStatus("inactive");
     } catch (error) {}
   };
-  useEffect(() => {
-    console.log(audioChunks, audioUrl);
-  }, [audioChunks, audioUrl]);
+  // useEffect(() => {
+  //   console.log(audioChunks, audioUrl);
+  // }, [audioChunks, audioUrl]);
   return (
     <section className="min-h-[30rem] w-full bg-[#1e293b]/50 container mx-auto p-8 my-5 rounded-lg border border-gray-400 flex flex-col">
       <div></div>
