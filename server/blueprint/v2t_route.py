@@ -28,6 +28,7 @@ def voice_to_text():
         audio_data_base64 = data['audio']
         language = data.get('language', 'en-IN')
         audio_data_binary = base64.b64decode(audio_data_base64)
+
         result = v2t(audio_data_binary, language)
 
         return jsonify(result)
