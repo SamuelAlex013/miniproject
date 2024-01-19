@@ -1,27 +1,37 @@
-import { useEffect, useRef, useState } from "react";
-import { LuMic, LuMicOff } from "react-icons/lu";
-import toWav from "audiobuffer-to-wav";
-import xhr from "xhr";
+import { useRef, useState } from "react";
+import { LuCircle, LuLoader, LuMic, LuMicOff, LuVolume2 } from "react-icons/lu";
+import { v2t } from "./utils/voiceToText";
 
+interface IMessage {
+  user: string;
+  id: number;
+  response: string;
+}
 const App = () => {
   const [status, setStatus] = useState("inactive");
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-  const [audioUrl, setAudioUrl] = useState("");
   const mediaRecorder = useRef<MediaRecorder>();
+  const [messageList, setMessageList] = useState<Array<IMessage>>([]);
+  const [processing, setProcessing] = useState(false);
+  const chunksRef = useRef<Blob[]>();
+  const [inputBlock, setInputBlock] = useState("");
 
-  const base64Converter = (blob: Blob) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(blob);
-    return new Promise((resolve) => {
-      reader.onload = () => {
-        resolve(reader.result);
-      };
-    });
+  const onStopHandler = async () => {
+    setProcessing(true);
+    if (!chunksRef.current) return;
+    const blob = chunksRef.current;
+    const url = URL.createObjectURL(blob[0]);
+    const text = (await v2t(url)) as string;
+    console.log(text);
+    setMessageList([
+      ...messageList,
+      { id: messageList.length + 1, user: "-1", response: text },
+    ]);
+    setProcessing(false);
   };
+
   const startRecording = async () => {
     try {
       // check the devices and browser support
-      const audioContext = new AudioContext();
       if (!navigator.mediaDevices) {
         alert("You Don't have required hardware");
         throw Error("");
@@ -43,49 +53,9 @@ const App = () => {
       let chunks: Blob[] = [];
       mediaRecorder.current.ondataavailable = (e) => {
         chunks.push(e.data);
-        setAudioChunks(chunks);
-        // setAudioUrl(URL.createObjectURL(chunks[0]));
+        chunksRef.current = chunks;
       };
-      mediaRecorder.current.onstop = async (e) => {
-        const blob = chunks;
-        const url = URL.createObjectURL(blob[0]);
-        const f = await xhr(
-          {
-            uri: url,
-            responseType: "arraybuffer",
-          },
-          (err, _, resp) => {
-            if (err) throw err;
-            audioContext.decodeAudioData(resp, async (buffer) => {
-              var wav = toWav(buffer);
-              var blob = new window.Blob([new DataView(wav)], {
-                type: "audio/wav",
-              });
-              const base64String = await base64Converter(blob);
-              if (typeof base64String !== "string") return;
-              const body = {
-                audio: base64String.split(",")[1],
-                language: "en-IN",
-              };
-              const text = await fetch("http://127.0.0.1:5000/voice_to_text", {
-                method: "POST",
-                body: JSON.stringify(body),
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              });
-              console.log(await text.json());
-            });
-          },
-        );
-        setAudioUrl(url);
-
-        const formData = new FormData();
-        formData.append("audio", blob[0], "recorded.ogg");
-
-        const base64String = await base64Converter(blob[0]);
-        if (typeof base64String !== "string") return;
-      };
+      mediaRecorder.current.onstop = onStopHandler;
     } catch (error) {
       console.log(error);
     }
@@ -100,19 +70,44 @@ const App = () => {
       setStatus("inactive");
     } catch (error) {}
   };
-  useEffect(() => {
-    console.log(audioChunks, audioUrl);
-  }, [audioChunks, audioUrl]);
+
   return (
-    <section className="min-h-[30rem] w-full bg-[#1e293b]/50 container mx-auto p-8 my-5 rounded-lg border border-gray-400 flex flex-col">
-      <div></div>
-      <div className="mt-auto flex gap-4">
+    <section className="min-h-[30rem] w-full bg-[#1e293b]/50 container mx-auto my-5 rounded-lg border border-gray-400 flex flex-col">
+      <div className="h-8 relative bottom-6">
+        {status === "recording" && (
+          <LuCircle className="fill-red-500 stroke-red-500 mx-auto border rounded-full h-5 w-5 p-[0.1rem]" />
+        )}
+      </div>
+      <div className="flex flex-col h-full overflow-scroll p-8">
+        {messageList.map((item) => (
+          <div key={item.id} className="flex flex-col gap-2 mb-8">
+            {item.user === "-1" ? (
+              <LuVolume2 className="text-8xl border border-border bg-card/10 p-2 rounded-xl w-fit self-end" />
+            ) : (
+              <p className="max-w-[80%] w-fit bg-card/10 p-2 rounded-lg self-end">
+                {item.user}
+              </p>
+            )}
+            {item.response === "-1" ? (
+              <LuVolume2 className="text-8xl border border-border p-2 rounded-xl bg-green-500/40" />
+            ) : (
+              <p className="max-w-[80%] w-fit bg-green-500/40 p-2 rounded-lg">
+                {item.response}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="mt-auto flex gap-4 sticky bottom-0 px-8 py-4 bg-[#1e293b] rounded">
         <input
           className="w-full p-2 rounded-lg bg-primary-foreground/10 outline-none"
           placeholder="Enter Your Message"
+          disabled={processing}
         />
-        <div>
-          {status === "inactive" ? (
+        <div className="flex justify-center items-center w-10">
+          {processing ? (
+            <LuLoader className="animate-spin" />
+          ) : status === "inactive" ? (
             <button
               className="w-10 rounded-full flex justify-center overflow-hidden"
               onClick={startRecording}
