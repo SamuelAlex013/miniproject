@@ -14,9 +14,6 @@ def text_to_voice_route():
 
         result = t2v(text, language_code, accent)
 
-        if isinstance(result, Response):
-            return result
-        else:
-            return jsonify(result)
+        return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)})
