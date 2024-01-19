@@ -1,6 +1,13 @@
 import { useRef, useState } from "react";
-import { LuCircle, LuLoader, LuMic, LuMicOff, LuVolume2 } from "react-icons/lu";
-import { v2t } from "./utils/voiceToText";
+import {
+  LuCircle,
+  LuLoader,
+  LuMic,
+  LuMicOff,
+  LuVolume2,
+  LuSend,
+} from "react-icons/lu";
+import { v2t, base64Converter } from "./utils/voiceToText";
 
 interface IMessage {
   user: string;
@@ -70,6 +77,35 @@ const App = () => {
       setStatus("inactive");
     } catch (error) {}
   };
+  const t2v = async () => {
+    if (inputBlock.length === 0) return;
+    setProcessing(true);
+    try {
+      const body = { text: inputBlock, language_code: "en-IN" };
+      console.log(body);
+      const resp = await fetch("http://127.0.0.1:5000/text_to_voice", {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      console.log(await resp.json());
+      // console.log(URL.createObjectURL(response));
+      // const unit8Audio = new TextEncoder().encode(response.audio);
+      // console.log(unit8Audio);
+      // const blob = new Blob([unit8Audio], {
+      //   type: "audio/wav",
+      // });
+      // console.log(blob);
+      // const url = URL.createObjectURL(blob);
+      // console.log(url);
+    } catch (error) {
+      console.log(error);
+    }
+    setInputBlock("");
+    setProcessing(false);
+  };
 
   return (
     <section className="min-h-[30rem] w-full bg-[#1e293b]/50 container mx-auto my-5 rounded-lg border border-gray-400 flex flex-col">
@@ -103,26 +139,43 @@ const App = () => {
           className="w-full p-2 rounded-lg bg-primary-foreground/10 outline-none"
           placeholder="Enter Your Message"
           disabled={processing}
+          value={inputBlock}
+          onChange={(e) => setInputBlock(e.target.value)}
         />
-        <div className="flex justify-center items-center w-10">
-          {processing ? (
-            <LuLoader className="animate-spin" />
-          ) : status === "inactive" ? (
-            <button
-              className="w-10 rounded-full flex justify-center overflow-hidden"
-              onClick={startRecording}
-            >
-              <LuMicOff className="h-full text-xl w-full p-2 bg-green-500" />
-            </button>
-          ) : (
-            <button
-              className="w-10 rounded-full flex justify-center overflow-hidden"
-              onClick={stopRecording}
-            >
-              <LuMic className="h-full text-xl w-full p-2 bg-destructive" />
-            </button>
-          )}
-        </div>
+        {inputBlock.length === 0 ? (
+          <div className="flex justify-center items-center w-10">
+            {processing ? (
+              <LuLoader className="animate-spin" />
+            ) : status === "inactive" ? (
+              <button
+                className="w-10 rounded-full flex justify-center overflow-hidden"
+                onClick={startRecording}
+              >
+                <LuMicOff className="h-full text-xl w-full p-2 bg-green-500 animate-pop-up" />
+              </button>
+            ) : (
+              <button
+                className="w-10 rounded-full flex justify-center overflow-hidden"
+                onClick={stopRecording}
+              >
+                <LuMic className="h-full text-xl w-full p-2 bg-destructive" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex justify-center items-center w-10">
+            {processing ? (
+              <LuLoader className="animate-spin" />
+            ) : (
+              <button
+                className="w-10 rounded-full flex justify-center overflow-hidden"
+                onClick={t2v}
+              >
+                <LuSend className="h-full text-xl w-full p-2 bg-green-500 rounded-full animate-pop-up" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

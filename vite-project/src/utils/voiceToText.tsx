@@ -1,6 +1,6 @@
 import toWav from "audiobuffer-to-wav";
 
-const base64Converter = (blob: Blob) => {
+export const base64Converter = (blob: Blob) => {
   const reader = new FileReader();
   reader.readAsDataURL(blob);
   return new Promise((resolve) => {

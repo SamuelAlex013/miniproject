@@ -81,6 +81,16 @@ export default {
             opacity: "1",
           },
         },
+        "pop-up": {
+          from: {
+            transform: "scale(0)",
+            opacity: "0",
+          },
+          to: {
+            transform: "scale(1)",
+            opacity: "1",
+          },
+        },
         "disc-out": {
           from: { transform: "translateY(0)" },
           to: { transform: "translateY(-10rem)" },
@@ -93,6 +103,7 @@ export default {
         "expand-right": "expand-right 0.6s ease-out",
         "movein-right": "movein-right 0.8s ease-out",
         "disc-out": "disc-out 1s ease-out",
+        "pop-up": "pop-up 0.2s ease-out",
       },
     },
   },
