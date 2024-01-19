@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
 from module.text_to_voice import t2v
 
 text_to_voice_bp = Blueprint('text_to_voice', __name__)
@@ -13,6 +13,10 @@ def text_to_voice_route():
         accent = data.get('accent', 'co.in')
 
         result = t2v(text, language_code, accent)
-        return jsonify(result)
+
+        if isinstance(result, Response):
+            return result
+        else:
+            return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)})
