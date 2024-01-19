@@ -8,11 +8,13 @@ import {
   LuSend,
 } from "react-icons/lu";
 import { v2t, base64Converter } from "./utils/voiceToText";
+import { base64ToBlob } from "./utils/textToVoice";
 
 interface IMessage {
   user: string;
   id: number;
   response: string;
+  url?: string;
 }
 const App = () => {
   const [status, setStatus] = useState("inactive");
@@ -21,6 +23,7 @@ const App = () => {
   const [processing, setProcessing] = useState(false);
   const chunksRef = useRef<Blob[]>();
   const [inputBlock, setInputBlock] = useState("");
+  const [t2vUrl, setT2vUrl] = useState("");
 
   const onStopHandler = async () => {
     setProcessing(true);
@@ -28,7 +31,6 @@ const App = () => {
     const blob = chunksRef.current;
     const url = URL.createObjectURL(blob[0]);
     const text = (await v2t(url)) as string;
-    console.log(text);
     setMessageList([
       ...messageList,
       { id: messageList.length + 1, user: "-1", response: text },
@@ -82,7 +84,6 @@ const App = () => {
     setProcessing(true);
     try {
       const body = { text: inputBlock, language_code: "en-IN" };
-      console.log(body);
       const resp = await fetch("http://127.0.0.1:5000/text_to_voice", {
         method: "POST",
         body: JSON.stringify(body),
@@ -90,21 +91,28 @@ const App = () => {
           "Content-Type": "application/json",
         },
       });
-      console.log(await resp.json());
-      // console.log(URL.createObjectURL(response));
-      // const unit8Audio = new TextEncoder().encode(response.audio);
-      // console.log(unit8Audio);
-      // const blob = new Blob([unit8Audio], {
-      //   type: "audio/wav",
-      // });
-      // console.log(blob);
-      // const url = URL.createObjectURL(blob);
-      // console.log(url);
+      const response = await resp.json();
+      const audioEncoded = "data:audio/mpeg;base64," + response.audio;
+      setMessageList([
+        ...messageList,
+        {
+          id: messageList.length + 1,
+          response: "-1",
+          user: inputBlock,
+          url: audioEncoded,
+        },
+      ]);
+      playAudio(audioEncoded);
     } catch (error) {
       console.log(error);
     }
     setInputBlock("");
     setProcessing(false);
+  };
+  const playAudio = (audioEncoded: string) => {
+    let audio = new Audio();
+    audio.src = audioEncoded;
+    audio.play();
   };
 
   return (
@@ -125,7 +133,13 @@ const App = () => {
               </p>
             )}
             {item.response === "-1" ? (
-              <LuVolume2 className="text-8xl border border-border p-2 rounded-xl bg-green-500/40" />
+              <button
+                onClick={() => {
+                  playAudio(item.url);
+                }}
+              >
+                <LuVolume2 className="text-8xl border border-border p-2 rounded-xl bg-green-500/40" />
+              </button>
             ) : (
               <p className="max-w-[80%] w-fit bg-green-500/40 p-2 rounded-lg">
                 {item.response}
@@ -134,6 +148,11 @@ const App = () => {
           </div>
         ))}
       </div>
+      {t2vUrl && (
+        <audio>
+          <source src={t2vUrl} type="audio/mpeg" />
+        </audio>
+      )}
       <div className="mt-auto flex gap-4 sticky bottom-0 px-8 py-4 bg-[#1e293b] rounded">
         <input
           className="w-full p-2 rounded-lg bg-primary-foreground/10 outline-none"

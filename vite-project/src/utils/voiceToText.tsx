@@ -22,6 +22,7 @@ export const v2t = async (audioUrl: string) => {
         type: "audio/wav",
       });
       const base64String = await base64Converter(blob);
+      console.log(base64String);
       if (typeof base64String !== "string") return;
       const body = {
         audio: base64String.split(",")[1],
@@ -35,7 +36,6 @@ export const v2t = async (audioUrl: string) => {
         },
       });
       textResponse = await resp.json();
-      console.log(textResponse);
       if (textResponse.error) rej(textResponse.error);
       else res(textResponse.text);
     });
